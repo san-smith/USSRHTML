@@ -69,7 +69,7 @@ def parser(inpStr):
                 s = ''
             tokenList.append(inpStr[i])
             
-        elif (inpStr[i] == '#') and (inpStr[i+1] == '#'):
+        elif (inpStr[i] == ':') and (inpStr[i+1] == ':'):
             if s != '':
                 tokenList.append(s)
                 s = ''
@@ -166,7 +166,7 @@ def compiler(STATE, token, statement, outpStr, atrStr):
             outpStr += '>\n'
             return STATE, outpStr, atrStr
             
-        elif token == '##':
+        elif token == '::':
             statement.append(STATE)
             STATE = 'ATTRIBUTES'
             atrStr = ''
@@ -203,7 +203,7 @@ def compiler(STATE, token, statement, outpStr, atrStr):
             outpStr += '>'
             return STATE, outpStr, atrStr
         
-        elif token == '##':
+        elif token == '::':
             statement.append(STATE)
             STATE = 'ATTRIBUTES'
             atrStr = ''
@@ -231,7 +231,7 @@ def compiler(STATE, token, statement, outpStr, atrStr):
 
 ############################################################################### 
     elif STATE == 'ATTRIBUTES':
-        if token == '##':
+        if token == '::':
             STATE = statement.pop()
             atrList = attributesParser(atrStr)
             atrStr = attributesCompiler(atrList)
