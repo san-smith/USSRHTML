@@ -69,6 +69,13 @@ def parser(inpStr):
                 s = ''
             tokenList.append(inpStr[i])
             
+        elif (inpStr[i] == '#') and (inpStr[i+1] == '#'):
+            if s != '':
+                tokenList.append(s)
+                s = ''
+            tokenList.append(inpStr[i:i+2])
+            i += 1
+            
         else:
             s += inpStr[i]
             
@@ -79,8 +86,33 @@ def parser(inpStr):
     return tokenList
 #==============================================================================
 
+#==============================================================================
+def attributesParser(inpAtrStr):
+    """
+    Функция-заглушка. Принимает строку со списком атрибутов,
+    возвращает список токенов-атрибутов.    
+    """
+    atrList = []
+    
+    atrList.append(inpAtrStr)
+    
+    return atrList
+#==============================================================================
+
+#==============================================================================
+def attributesCompiler(atrList):
+    """
+    Функция-заглушка. Принимает список атрибутов на ЯГТР,
+    возвращает строку атрибутов на HTML.    
+    """
+    
+    outAtrStr = ' ' + ''.join(atrList)
+    
+    return outAtrStr
+#==============================================================================
+
 #==============================================================================    
-def compiler(STATE, token, statement, outpStr):
+def compiler(STATE, token, statement, outpStr, atrStr):
     """
     Функция получения HTML кода из потока токенов
 
@@ -132,12 +164,12 @@ def compiler(STATE, token, statement, outpStr):
         if token == '(':
             STATE = '<body>'
             outpStr += '>\n'
-            return STATE, outpStr
+            return STATE, outpStr, atrStr
             
-#        elif token == '\\тело':
-#            statement.append(STATE)
-#            STATE = '<body'
-#            outpStr += STATE
+        elif token == '##':
+            statement.append(STATE)
+            STATE = 'ATTRIBUTES'
+            atrStr = ''
 #            
 #        elif token == '%':
 #            statement.append(STATE)
@@ -150,7 +182,7 @@ def compiler(STATE, token, statement, outpStr):
         if token == ')':
             outpStr += '</body>\n</html>'
             STATE = 'END'
-            return STATE, outpStr
+            return STATE, outpStr, atrStr
         
         elif token == '\\пар':
             statement.append(STATE)
@@ -169,8 +201,12 @@ def compiler(STATE, token, statement, outpStr):
         if token == '(':
             STATE = '<p>'
             outpStr += '>'
-            return STATE, outpStr
-
+            return STATE, outpStr, atrStr
+        
+        elif token == '##':
+            statement.append(STATE)
+            STATE = 'ATTRIBUTES'
+            atrStr = ''
 ###############################################################################
 #   '<p>' == '\пар(' - параграф/абзац
 
@@ -178,7 +214,7 @@ def compiler(STATE, token, statement, outpStr):
         if token == ')':
             outpStr += '</p>\n'
             STATE = statement.pop()
-            return STATE, outpStr  
+            return STATE, outpStr, atrStr  
         
         else:
             outpStr += token
@@ -193,8 +229,19 @@ def compiler(STATE, token, statement, outpStr):
             else:
                 STATE = '<html>'
 
-###############################################################################            
-    return STATE, outpStr
+############################################################################### 
+    elif STATE == 'ATTRIBUTES':
+        if token == '##':
+            STATE = statement.pop()
+            atrList = attributesParser(atrStr)
+            atrStr = attributesCompiler(atrList)
+            outpStr += atrStr
+            atrStr = ''
+        
+        else:
+            atrStr += token
+###############################################################################           
+    return STATE, outpStr, atrStr
 #==============================================================================
 
 # Начало программы
@@ -231,10 +278,13 @@ STATE = '<html>'
 inpStr = text
 outpStr = '<html>\n'
 tokenList = parser(inpStr)
+atrStr = ''
+
+#print(tokenList)
 
 for token in tokenList:
 
-    STATE, outpStr = compiler(STATE, token, statement, outpStr)
+    STATE, outpStr, atrStr = compiler(STATE, token, statement, outpStr, atrStr)
     if STATE == 'ERROR':
         print('Ошибка! Компиляция завершена аварийно')
         break
