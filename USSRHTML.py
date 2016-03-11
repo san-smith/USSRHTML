@@ -80,7 +80,8 @@ def parser(inpStr, log=False):
             s += inpStr[i]
             
         i += 1
-        
+    
+    # Если необходимо, запишем список токенов в файл    
     if log == True:
         f = open('tokenList.txt', 'w') # открываем для записи (writing)
         f.write(str(tokenList)) # записываем текст в файл
@@ -124,10 +125,12 @@ def compiler(STATE, token, statement, outpStr, atrStr):
         token - текущий токен, 
         statement - стек состояний, 
         outpStr - текущее значение выходной строки
+        atrStr - текущее значение строки атрибутов
     
     Выходные параметры:
         STATE - новое состояние, 
         outpStr - новое значение выходной строки
+        atrStr - новое значение строки атрибутов 
     """
     
 
@@ -148,8 +151,11 @@ def compiler(STATE, token, statement, outpStr, atrStr):
                 
         return STATE, outpStr, atrStr
 
-###############################################################################   
+###############################################################################      
     elif STATE == 'ATTRIBUTES':
+        """ В этом состоянии идет проверка атрибутов тегов.
+        Вход в состояние с помощью токена '::',
+        Выход из состояния - с помощью повторного токена '::'.""" 
         if token == '::':
             STATE = statement.pop()
             atrList = attributesParser(atrStr)
@@ -163,11 +169,16 @@ def compiler(STATE, token, statement, outpStr, atrStr):
             
 ###############################################################################
     if token == '%':
+        """ Считаем комментарием все токены от '%' до конца строки"""
         statement.append(STATE)
         STATE = 'COMMENT'
 
 ############################################################################### 
     elif token == '::':
+        """ Если текущее состояние неполный тег (напр. '<body'), 
+        переходим в состояние ATTRIBUTES, чтобы добавить атрибуты тега.
+        В противном случае - просто добавляем токен в выходную строку."""
+        
         if STATE in NOT_FULL_TAGS:
             statement.append(STATE)
             STATE = 'ATTRIBUTES'
@@ -177,6 +188,8 @@ def compiler(STATE, token, statement, outpStr, atrStr):
             
 ###############################################################################
     elif token == '(':
+        """ Если текущее состояние неполный тег (напр. '<body'),
+        то дописываем закрывающуюся угловую скобку"""
         if STATE in NOT_FULL_TAGS:
             STATE += '>'
             outpStr += '>'
@@ -184,16 +197,21 @@ def compiler(STATE, token, statement, outpStr, atrStr):
         
 ###############################################################################    
     elif token == ')':
+        """ Если текущее состояние '<body>' - дописываем конец файла и 
+        закрываем его."""
         if STATE == '<body>':
             outpStr += '</body>\n</html>'
             STATE = 'END'
    
         else:
             if STATE in FULL_TAGS:
+                """ Если текущее состояние полный тег (напр. <p>), 
+                то закрываем его парным тегом (напр. </p>)"""
                 outpStr += FULL_TAGS[STATE]
                 STATE = statement.pop()
             
             elif STATE in SINGLE_TAGS:
+                """ Если тег одиночный (напр. <br>)"""
                 pass
             
             else:
@@ -224,6 +242,16 @@ def compiler(STATE, token, statement, outpStr, atrStr):
     elif token == '\\ж':
         statement.append(STATE)
         STATE = '<b'
+        outpStr += STATE
+        
+    elif token == '\\к':
+        statement.append(STATE)
+        STATE = '<i'
+        outpStr += STATE
+        
+    elif token == '\\пдч':
+        statement.append(STATE)
+        STATE = '<u'
         outpStr += STATE
             
     else:
@@ -259,11 +287,17 @@ else:
     print('Ошибка! Путь к файлу не указан!')
     exit()
 
-NOT_FULL_TAGS = ['<head', '<body', '<p', '<b']   
+# Список неполных тегов
+NOT_FULL_TAGS = ['<head', '<body', '<p', '<b', '<i', '<u', '<s']   
+# Словарь парных тегов
 FULL_TAGS = {'<html>' : '</html>', 
             '<body>' : '</body>', 
             '<p>' : '</p>',
-            '<b>' : '</b>'}
+            '<b>' : '</b>',
+            '<i>' : '</i>',
+            '<u>' : '</u>'            
+            }
+# Список одиночных тегов            
 SINGLE_TAGS = ['<br>', '<hr>']
 
 # Стек состояний
