@@ -13,7 +13,7 @@ import sys
 import datetime
 
 #==============================================================================
-def parser(inpStr):
+def parser(inpStr, log=False):
     """
     Функция разбиения строки на токены
     
@@ -81,7 +81,10 @@ def parser(inpStr):
             
         i += 1
         
-
+    if log == True:
+        f = open('tokenList.txt', 'w') # открываем для записи (writing)
+        f.write(str(tokenList)) # записываем текст в файл
+        f.close() # закрываем файл
         
     return tokenList
 #==============================================================================
@@ -126,110 +129,26 @@ def compiler(STATE, token, statement, outpStr, atrStr):
         STATE - новое состояние, 
         outpStr - новое значение выходной строки
     """
-#    if (STATE != 'COMMENT') and token in '%()\n':
-#        if STATE != '<html>':
-#            outpStr += token
-#        else:
-#            STATE = 'COMMENT'
-#        return STATE, outpStr
+    
 
-###############################################################################    
-#   Начальное состояние    
-
-    if STATE == '<html>':
-        if token == '\\голова':
-            statement.append(STATE)
-            STATE = '<head>'
-            outpStr += STATE+'\n'
-            
-        elif token == '\\тело':
-            statement.append(STATE)
-            STATE = '<body'
-            outpStr += STATE
-            
-        elif token == '%':
-            statement.append(STATE)
-            STATE = 'COMMENT'
-            
-        else:
-            STATE = 'ERROR'
-            
-
-############################################################################### 
-#   Неполный   '<body>' 
-#   Если уже было "\тело", но не было "(", попадаем в это состояние.
-#   Это необходимо, чтобы была возможность вставки аргументов в тег   
-
-    if STATE == '<body':
-        if token == '(':
-            STATE = '<body>'
-            outpStr += '>\n'
-            return STATE, outpStr, atrStr
-            
-        elif token == '::':
-            statement.append(STATE)
-            STATE = 'ATTRIBUTES'
-            atrStr = ''
-#            
-#        elif token == '%':
-#            statement.append(STATE)
-#            STATE = 'COMMENT'
-#            
-############################################################################### 
-#   '<body>' == "\тело(" - тело документа
-            
-    elif STATE == '<body>':
-        if token == ')':
-            outpStr += '</body>\n</html>'
-            STATE = 'END'
-            return STATE, outpStr, atrStr
-        
-        elif token == '\\пар':
-            statement.append(STATE)
-            STATE = '<p'
-            outpStr += STATE
-            
-            
-            
-        else:
-            outpStr += token
-
+ 
 ###############################################################################
-#   Неполный  '<p>'
-           
-    elif STATE == '<p':
-        if token == '(':
-            STATE = '<p>'
-            outpStr += '>'
-            return STATE, outpStr, atrStr
-        
-        elif token == '::':
-            statement.append(STATE)
-            STATE = 'ATTRIBUTES'
-            atrStr = ''
-###############################################################################
-#   '<p>' == '\пар(' - параграф/абзац
+    """ Отдельно проверим состояние Комментария - если текущее состояние COMMENT,
+    то при любом токене выходная строка не изменится.
+    Однако, если текущий токен равен переносу строки '\n', то,
+    если стек состояний не пуст, то восстанавливаем последнее состояние,
+    иначе - текущим состоянием станет '<html>' """ 
 
-    elif STATE == '<p>':
-        if token == ')':
-            outpStr += '</p>\n'
-            STATE = statement.pop()
-            return STATE, outpStr, atrStr  
-        
-        else:
-            outpStr += token
-
-###############################################################################  
-#   Комментарий. Действует от % до конца строки
-          
-    elif STATE == 'COMMENT':
+    if STATE == 'COMMENT':
         if token == '\n':
             if len(statement) != 0:
                 STATE = statement.pop()
             else:
                 STATE = '<html>'
+                
+        return STATE, outpStr, atrStr
 
-############################################################################### 
+###############################################################################   
     elif STATE == 'ATTRIBUTES':
         if token == '::':
             STATE = statement.pop()
@@ -240,9 +159,79 @@ def compiler(STATE, token, statement, outpStr, atrStr):
         
         else:
             atrStr += token
-###############################################################################           
+        return STATE, outpStr, atrStr
+            
+###############################################################################
+    if token == '%':
+        statement.append(STATE)
+        STATE = 'COMMENT'
+
+############################################################################### 
+    elif token == '::':
+        if STATE in NOT_FULL_TAGS:
+            statement.append(STATE)
+            STATE = 'ATTRIBUTES'
+            atrStr = ''
+        else:
+            outpStr += token
+            
+###############################################################################
+    elif token == '(':
+        if STATE in NOT_FULL_TAGS:
+            STATE += '>'
+            outpStr += '>'
+        return STATE, outpStr, atrStr
+        
+###############################################################################    
+    elif token == ')':
+        if STATE == '<body>':
+            outpStr += '</body>\n</html>'
+            STATE = 'END'
+   
+        else:
+            if STATE in FULL_TAGS:
+                outpStr += FULL_TAGS[STATE]
+                STATE = statement.pop()
+            
+            elif STATE in SINGLE_TAGS:
+                pass
+            
+            else:
+                STATE = 'ERROR'
+                print('Отсутствует завершающий тег.')
+                
+        return STATE, outpStr, atrStr  
+        
+###############################################################################    
+    elif token == '\\голова':
+        if STATE == '<html>':
+            statement.append(STATE)
+            STATE = '<head>'
+            outpStr += STATE+'\n'
+        else:
+            STATE = 'ERROR'
+        
+    elif token == '\\тело':
+        statement.append(STATE)
+        STATE = '<body'
+        outpStr += STATE
+            
+    elif token == '\\пар':
+        statement.append(STATE)
+        STATE = '<p'
+        outpStr += STATE
+            
+    elif token == '\\ж':
+        statement.append(STATE)
+        STATE = '<b'
+        outpStr += STATE
+            
+    else:
+        outpStr += token    
+        
+###############################################################################        
     return STATE, outpStr, atrStr
-#==============================================================================
+##==============================================================================
 
 # Начало программы
 
@@ -270,6 +259,12 @@ else:
     print('Ошибка! Путь к файлу не указан!')
     exit()
 
+NOT_FULL_TAGS = ['<head', '<body', '<p', '<b']   
+FULL_TAGS = {'<html>' : '</html>', 
+            '<body>' : '</body>', 
+            '<p>' : '</p>',
+            '<b>' : '</b>'}
+SINGLE_TAGS = ['<br>', '<hr>']
 
 # Стек состояний
 statement = []
@@ -277,7 +272,7 @@ STATE = '<html>'
 
 inpStr = text
 outpStr = '<html>\n'
-tokenList = parser(inpStr)
+tokenList = parser(inpStr, log=True)
 atrStr = ''
 
 #print(tokenList)
