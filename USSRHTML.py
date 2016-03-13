@@ -253,6 +253,26 @@ def compiler(STATE, token, statement, outpStr, atrStr):
         statement.append(STATE)
         STATE = '<u'
         outpStr += STATE
+        
+    elif token == '\\зч':
+        statement.append(STATE)
+        STATE = '<s'
+        outpStr += STATE
+        
+    elif token == '\\ссылка':
+        statement.append(STATE)
+        STATE = '<a'
+        outpStr += STATE
+        
+    elif token == '\\под':
+        statement.append(STATE)
+        STATE = '<sub'
+        outpStr += STATE
+        
+    elif token == '\\над':
+        statement.append(STATE)
+        STATE = '<sup'
+        outpStr += STATE
             
     else:
         outpStr += token    
@@ -288,14 +308,19 @@ else:
     exit()
 
 # Список неполных тегов
-NOT_FULL_TAGS = ['<head', '<body', '<p', '<b', '<i', '<u', '<s']   
+NOT_FULL_TAGS = ['<head', '<body', '<p', '<b', '<i', '<u', '<s', '<a', '<sub',
+                 '<sup']   
 # Словарь парных тегов
 FULL_TAGS = {'<html>' : '</html>', 
             '<body>' : '</body>', 
             '<p>' : '</p>',
             '<b>' : '</b>',
             '<i>' : '</i>',
-            '<u>' : '</u>'            
+            '<u>' : '</u>',  
+            '<s>' : '</s>',
+            '<a>' : '</a>',
+            '<sub>' : '</sub>',
+            '<sup>' : '</sup>'
             }
 # Список одиночных тегов            
 SINGLE_TAGS = ['<br>', '<hr>']
