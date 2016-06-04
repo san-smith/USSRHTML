@@ -19,7 +19,7 @@ def parser(inpStr, log=False):
     
     Функция принимает на вход строку, возвращает список токенов, полученных
     из этой строки. Границами токенов могут служить: \, (, ), %, команды,
-    символл конца строки и др.
+    символ конца строки и др.
     """
     i = 0
     inpStr += ' '   # Добавим в конец строки для удобства
@@ -315,6 +315,46 @@ def compiler(STATE, token, statement, outpStr, atrStr):
         STATE = '<img'
         outpStr += STATE
         
+    elif token == '\\мсп':
+        statement.append(STATE)
+        STATE = '<ul'
+        outpStr += STATE
+        
+    elif token == '\\нсп':
+        statement.append(STATE)
+        STATE = '<ol'
+        outpStr += STATE
+        
+    elif token == '\\эл':
+        statement.append(STATE)
+        STATE = '<li'
+        outpStr += STATE
+        
+    elif token == '\\линк':         # может выбрать другое слово???
+        statement.append(STATE)
+        STATE = '<link'
+        outpStr += STATE  
+        
+    elif token == '\\адрес':
+        statement.append(STATE)
+        STATE = '<address'
+        outpStr += STATE
+        
+    elif token == '\\таблица':
+        statement.append(STATE)
+        STATE = '<table'
+        outpStr += STATE
+        
+    elif token == '\\стр':
+        statement.append(STATE)
+        STATE = '<tr'
+        outpStr += STATE
+        
+    elif token == '\\стлб':
+        statement.append(STATE)
+        STATE = '<td'
+        outpStr += STATE
+        
 #    elif token == '\\нc':
 #        statement.append(STATE)
 #        STATE = '<br'
@@ -359,6 +399,7 @@ NOT_FULL_TAGS = [
             
             # a
             '<a',
+            '<address',
             
             # b
             '<body',
@@ -398,7 +439,8 @@ NOT_FULL_TAGS = [
             
             
             # l
-            
+            '<li',
+            '<link',
             
             # m            
             
@@ -407,7 +449,7 @@ NOT_FULL_TAGS = [
             
             
             # o            
-            
+            '<ol',
             
             # p
             '<p',
@@ -424,10 +466,13 @@ NOT_FULL_TAGS = [
             '<sup',
             
             # t
-            
+            '<table',
+            '<td',
+            '<tr',
             
             # u
             '<u',
+            '<ul',
             
             # v
             
@@ -444,6 +489,7 @@ FULL_TAGS = {
             
             # a
             '<a>' : '</a>',
+            '<address>' : '</address>',
             
             # b
             '<body>' : '</body>', 
@@ -473,6 +519,7 @@ FULL_TAGS = {
             '<h4>' : '</h4>',
             '<h5>' : '</h5>',
             '<h6>' : '</h6>',
+            '<head>' : '</head>',
             
             # i
             '<i>' : '</i>',
@@ -485,7 +532,8 @@ FULL_TAGS = {
             
             
             # l
-            
+            '<li>' : '</li>',
+            '<link>' : '',
             
             # m
             
@@ -494,7 +542,7 @@ FULL_TAGS = {
             
             
             # o
-            
+            '<ol>' : '</ol>',
             
             # p
             '<p>' : '</p>',
@@ -511,10 +559,13 @@ FULL_TAGS = {
             '<sup>' : '</sup>',
             
             # t
-            
+            '<table>' : '</table>',
+            '<td>' : '</td>',
+            '<tr>' : '</tr>',
             
             # u
             '<u>' : '</u>', 
+            '<ul>' : '</ul>',
             
             # v
             
