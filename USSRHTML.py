@@ -215,6 +215,7 @@ def compiler(STATE, token, statement, outpStr, atrStr):
                 pass
             
             else:
+                print(STATE)                
                 STATE = 'ERROR'
                 print('Отсутствует завершающий тег.')
                 
@@ -273,6 +274,51 @@ def compiler(STATE, token, statement, outpStr, atrStr):
         statement.append(STATE)
         STATE = '<sup'
         outpStr += STATE
+        
+    elif token == '\\зг1':
+        statement.append(STATE)
+        STATE = '<h1'
+        outpStr += STATE
+        
+    elif token == '\\зг2':
+        statement.append(STATE)
+        STATE = '<h2'
+        outpStr += STATE
+        
+    elif token == '\\зг3':
+        statement.append(STATE)
+        STATE = '<h3'
+        outpStr += STATE
+        
+    elif token == '\\зг4':
+        statement.append(STATE)
+        STATE = '<h4'
+        outpStr += STATE
+        
+    elif token == '\\зг5':
+        statement.append(STATE)
+        STATE = '<h5'
+        outpStr += STATE
+        
+    elif token == '\\зг6':
+        statement.append(STATE)
+        STATE = '<h6'
+        outpStr += STATE
+        
+    elif token == '\\блок':
+        statement.append(STATE)
+        STATE = '<div'
+        outpStr += STATE
+        
+    elif token == '\\рис':
+        statement.append(STATE)
+        STATE = '<img'
+        outpStr += STATE
+        
+#    elif token == '\\нc':
+#        statement.append(STATE)
+#        STATE = '<br'
+#        outpStr += STATE
             
     else:
         outpStr += token    
@@ -308,19 +354,178 @@ else:
     exit()
 
 # Список неполных тегов
-NOT_FULL_TAGS = ['<head', '<body', '<p', '<b', '<i', '<u', '<s', '<a', '<sub',
-                 '<sup']   
+NOT_FULL_TAGS = [
+            '<head', 
+            
+            # a
+            '<a',
+            
+            # b
+            '<body',
+            '<b',
+#            '<br'
+            # c
+            
+            
+            # d
+            '<div',
+            
+            # e
+            
+            
+            # f
+            
+            
+            # g
+            
+            
+            # h
+            '<h1',
+            '<h2',
+            '<h3',
+            '<h4',
+            '<h5',
+            '<h6',
+            
+            # i
+            '<i',
+            '<img',
+            
+            # j
+            
+            
+            # k
+            
+            
+            # l
+            
+            
+            # m            
+            
+            
+            # n
+            
+            
+            # o            
+            
+            
+            # p
+            '<p',
+            
+            # q
+            
+            
+            # r
+            
+            
+            # s
+            '<s',
+            '<sub',
+            '<sup',
+            
+            # t
+            
+            
+            # u
+            '<u',
+            
+            # v
+            
+            
+            # w
+            
+            
+            #x
+       
+                  ' ']   
 # Словарь парных тегов
-FULL_TAGS = {'<html>' : '</html>', 
-            '<body>' : '</body>', 
-            '<p>' : '</p>',
-            '<b>' : '</b>',
-            '<i>' : '</i>',
-            '<u>' : '</u>',  
-            '<s>' : '</s>',
+FULL_TAGS = {
+            '<html>' : '</html>',
+            
+            # a
             '<a>' : '</a>',
+            
+            # b
+            '<body>' : '</body>', 
+            '<b>' : '</b>',
+#            '<br>' : '',
+            
+            # c 
+            
+            
+            
+            # d 
+            '<div>' : '</div>',
+            
+            # e
+            
+            
+            # f
+            
+            
+            # g
+            
+            
+            # h
+            '<h1>' : '</h1>',
+            '<h2>' : '</h2>',
+            '<h3>' : '</h3>',
+            '<h4>' : '</h4>',
+            '<h5>' : '</h5>',
+            '<h6>' : '</h6>',
+            
+            # i
+            '<i>' : '</i>',
+            '<img>' : '',
+            
+            # j
+            
+            
+            # k
+            
+            
+            # l
+            
+            
+            # m
+            
+            
+            # n
+            
+            
+            # o
+            
+            
+            # p
+            '<p>' : '</p>',
+            
+            # q
+            
+            
+            # r
+            
+            
+            # s
+            '<s>' : '</s>',
             '<sub>' : '</sub>',
-            '<sup>' : '</sup>'
+            '<sup>' : '</sup>',
+            
+            # t
+            
+            
+            # u
+            '<u>' : '</u>', 
+            
+            # v
+            
+            
+            # w
+            
+            
+            # x
+            
+            
+            ' ' : ' '
             }
 # Список одиночных тегов            
 SINGLE_TAGS = ['<br>', '<hr>']
