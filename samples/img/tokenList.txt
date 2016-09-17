@@ -1,1 +1,0 @@
-['\\тело', '(', '\t', '\n', '\t', '\\пар', '(', 'Возьмем рисунок из Википедии', ')', '\n', '\t', '\\рис', '::', 'src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/HTML.svg/266px-HTML.svg.png"  alt="Википедия: HTML"', '::', '(', ')', '\n', ')']

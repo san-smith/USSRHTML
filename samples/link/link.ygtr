@@ -1,0 +1,6 @@
+﻿\голова(
+	\связка::href="style.css" rel="stylesheet" type="text/css"::()
+)
+\тело(
+	\блок::class = "alert"::(Стиль для этого блока прописан в файле style.css)
+)

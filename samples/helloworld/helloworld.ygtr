@@ -1,0 +1,39 @@
+﻿\тело::style="background-color: #fff;"::(
+	\абзац:: style="color: #288ce4;" ::(Привет, Мир!) 
+	%коммент
+	\абзац(
+		Этот текст должен быть в отдельном параграфе.
+	)
+	\абзац::style="color: green; font-size: 2em"::(
+		\(А этот - ещё и в скобках.\)
+	)
+		
+	\блок:: style="padding: 10px;
+    border: 1px solid #d6e9c6;
+    background-color: #dff0d8;
+    color: #468847;
+    border-radius: 5px; width: 400px;" ::(
+		\а(Этот текст будет \ж(полужирным). А этот - \к(курсивом).)
+	
+		\а(Добавим \пдч(подчеркнутый) и \зч(зачеркнутый) текст.)
+	
+		\а(Ссылка на наш \с::href="https://github.com/san-smith/USSRHTML"::(Github).)
+	
+		\а(Можно добавить \под(подстрочный) и \над(надстрочный) текст.)
+	)
+	
+	\зг1(Заголовок 1)
+
+	\блок::style="width: 300px; background: #ccc; padding:5px; border: solid 1px black;"::(Lorem ipsum dolor sit amet, possit interpretaris eam id, purto delectus quo ea. Usu dictas delicata omittantur ea, consul melius pri an, ad eam ignota consequat. Pri an aeterno perfecto, porro aperiam convenire nam ne. Eam aliquid dolores ad, scaevola imperdiet forensibus at usu. Pro dolores praesent sententiae eu, qui ad elaboraret reprimique, at fuisset argumentum mei. No inani tantas recusabo has. No iuvaret definiebas usu.)
+
+	\мсп(
+		\эл(Элемент 1)
+		\эл(Элемент 2)
+	)
+	\нсп(
+		\эл(Элемент 1)
+		\эл(Элемент 2)
+	)
+
+	\рис:: src="https://upload.wikimedia.org/wikipedia/commons/6/65/Amur_Leopard_%28P.p._amurensis%29.jpg" style="position: absolute; top: 50px; left: 500px;"::()
+)

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 '''
 USSRHTML - это компилятор для языка гипертекстовой разметки (ЯГТР), написанный на python.
 
@@ -235,7 +236,7 @@ def compiler(STATE, token, statement, outpStr, atrStr):
         STATE = '<body'
         outpStr += STATE
             
-    elif token == '\\пар':
+    elif token == '\\абзац' or token == '\\а':
         statement.append(STATE)
         STATE = '<p'
         outpStr += STATE
@@ -260,7 +261,7 @@ def compiler(STATE, token, statement, outpStr, atrStr):
         STATE = '<s'
         outpStr += STATE
         
-    elif token == '\\ссылка':
+    elif token == '\\с' or token == '\\cсылка':
         statement.append(STATE)
         STATE = '<a'
         outpStr += STATE
@@ -330,7 +331,7 @@ def compiler(STATE, token, statement, outpStr, atrStr):
         STATE = '<li'
         outpStr += STATE
         
-    elif token == '\\линк':         # может выбрать другое слово???
+    elif token == '\\связка':
         statement.append(STATE)
         STATE = '<link'
         outpStr += STATE  
@@ -369,29 +370,38 @@ def compiler(STATE, token, statement, outpStr, atrStr):
 
 # Начало программы
 
-# Начало компиляции
-startTime = datetime.datetime.now()
-print(startTime.strftime("%d.%m.%Y %H:%M:%S"), 'Начало компиляции')
-
-# Флаг учпешного завершения процесса
-processSucessfull = False
-
 # Проверяем наличие аргумента
 if len(sys.argv) > 1:
     # Считываем файл по указанному пути
     try:
         fileName = sys.argv[1]        
-        f = open(fileName)
+        f = open(fileName, encoding='utf-8-sig')
         lines = f.readlines()
         text = ''.join(lines)
         f.close()
+        
+        # Создаем файл с тем же имененем и расширением .html
+        k = fileName.rfind('.')
+        if k != -1:
+            outFile = open(fileName[:k] + '.log', 'w')
+        else:
+            fout = open(fileName + '.log', 'w')
+
     except IOError:
-        print('Невозможно открыть файл! Проверьте правильность пути.')
+        print('Невозможно открыть файл! Проверьте правильность пути.', file = outFile)
         exit()
         
 else:
     print('Ошибка! Путь к файлу не указан!')
     exit()
+
+# Начало компиляции
+
+startTime = datetime.datetime.now()
+print(startTime.strftime("%d.%m.%Y %H:%M:%S"), 'Начало компиляции', file = outFile)
+
+# Флаг учпешного завершения процесса
+processSucessfull = False
 
 # Список неполных тегов
 NOT_FULL_TAGS = [
@@ -464,6 +474,7 @@ NOT_FULL_TAGS = [
             '<s',
             '<sub',
             '<sup',
+            '<style',
             
             # t
             '<table',
@@ -557,6 +568,7 @@ FULL_TAGS = {
             '<s>' : '</s>',
             '<sub>' : '</sub>',
             '<sup>' : '</sup>',
+            '<style>' : '</style>',
             
             # t
             '<table>' : '</table>',
@@ -586,8 +598,8 @@ statement = []
 STATE = '<html>'
 
 inpStr = text
-outpStr = '<html>\n'
-tokenList = parser(inpStr, log=True)
+outpStr = '<!DOCTYPE html>\n<html>\n'
+tokenList = parser(inpStr, log=False)
 atrStr = ''
 
 #print(tokenList)
@@ -596,13 +608,13 @@ for token in tokenList:
 
     STATE, outpStr, atrStr = compiler(STATE, token, statement, outpStr, atrStr)
     if STATE == 'ERROR':
-        print('Ошибка! Компиляция завершена аварийно')
+        print('Ошибка! Компиляция завершена аварийно', file = outFile)
         break
     elif STATE == 'END':
         break
 
 if STATE != 'END':
-    print('Ошибка! Неожиданный конец файла.')
+    print('Ошибка! Неожиданный конец файла.', file = outFile)
     exit()
 
 #print(outpStr)
@@ -623,6 +635,6 @@ fout.close()
 
 endTime = datetime.datetime.now()
 deltaTime = endTime - startTime
-print('Процесс успешно завершен через ', deltaTime)
+print('Процесс успешно завершен через ', deltaTime, file = outFile)
 
 
