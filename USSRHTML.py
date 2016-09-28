@@ -14,7 +14,7 @@ import sys
 import datetime
 
 #==============================================================================
-def parser(inpStr, log=False):
+def parser(inpStr, log=False, path=""):
     """
     Функция разбиения строки на токены
     
@@ -29,9 +29,11 @@ def parser(inpStr, log=False):
     while i < len(inpStr)-1:
         if inpStr[i] == '\\':        
 #           Если после \ идет \, (, ), %, то добавляем сам символ      
-            if inpStr[i+1] in r'\())%':
+            if inpStr[i+1] in r'\()<>%':
                 s += inpStr[i+1]
                 i += 2  # И начинаем новую итерацию
+                tokenList.append(s)
+                s = ''
                 continue
                 
             else:
@@ -77,6 +79,12 @@ def parser(inpStr, log=False):
             tokenList.append(inpStr[i:i+2])
             i += 1
             
+        elif (inpStr[i] == '<'):
+            s += '&lt;'
+
+        elif (inpStr[i] == '>'):
+            s += '&gt;'
+            
         else:
             s += inpStr[i]
             
@@ -84,7 +92,7 @@ def parser(inpStr, log=False):
     
     # Если необходимо, запишем список токенов в файл    
     if log == True:
-        f = open('tokenList.txt', 'w') # открываем для записи (writing)
+        f = open(path + 'tokenList.txt', 'w') # открываем для записи (writing)
         f.write(str(tokenList)) # записываем текст в файл
         f.close() # закрываем файл
         
@@ -211,10 +219,6 @@ def compiler(STATE, token, statement, outpStr, atrStr):
                 outpStr += FULL_TAGS[STATE]
                 STATE = statement.pop()
             
-            elif STATE in SINGLE_TAGS:
-                """ Если тег одиночный (напр. <br>)"""
-                pass
-            
             else:
                 print(STATE)                
                 STATE = 'ERROR'
@@ -227,143 +231,35 @@ def compiler(STATE, token, statement, outpStr, atrStr):
         if STATE == '<html>':
             statement.append(STATE)
             STATE = '<head>'
-            outpStr += STATE+'\n'
+            outpStr += STATE
+        else:
+            STATE = 'ERROR'
+            
+    elif token in HEAD_COMMAND.keys():
+        if STATE == '<head>':
+            statement.append(STATE)
+            STATE = HEAD_COMMAND[token]
+            outpStr += STATE
         else:
             STATE = 'ERROR'
         
     elif token == '\\тело':
-        statement.append(STATE)
-        STATE = '<body'
-        outpStr += STATE
-            
-    elif token == '\\абзац' or token == '\\а':
-        statement.append(STATE)
-        STATE = '<p'
-        outpStr += STATE
-            
-    elif token == '\\ж':
-        statement.append(STATE)
-        STATE = '<b'
-        outpStr += STATE
+        if STATE == '<html>':
+            statement.append(STATE)
+            STATE = '<body'
+            outpStr += STATE
+        else:
+            STATE = 'ERROR'
         
-    elif token == '\\к':
+    elif token in BODY_COMMAND.keys():
         statement.append(STATE)
-        STATE = '<i'
+        STATE = BODY_COMMAND[token]
         outpStr += STATE
-        
-    elif token == '\\пдч':
-        statement.append(STATE)
-        STATE = '<u'
-        outpStr += STATE
-        
-    elif token == '\\зч':
-        statement.append(STATE)
-        STATE = '<s'
-        outpStr += STATE
-        
-    elif token == '\\с' or token == '\\cсылка':
-        statement.append(STATE)
-        STATE = '<a'
-        outpStr += STATE
-        
-    elif token == '\\под':
-        statement.append(STATE)
-        STATE = '<sub'
-        outpStr += STATE
-        
-    elif token == '\\над':
-        statement.append(STATE)
-        STATE = '<sup'
-        outpStr += STATE
-        
-    elif token == '\\зг1':
-        statement.append(STATE)
-        STATE = '<h1'
-        outpStr += STATE
-        
-    elif token == '\\зг2':
-        statement.append(STATE)
-        STATE = '<h2'
-        outpStr += STATE
-        
-    elif token == '\\зг3':
-        statement.append(STATE)
-        STATE = '<h3'
-        outpStr += STATE
-        
-    elif token == '\\зг4':
-        statement.append(STATE)
-        STATE = '<h4'
-        outpStr += STATE
-        
-    elif token == '\\зг5':
-        statement.append(STATE)
-        STATE = '<h5'
-        outpStr += STATE
-        
-    elif token == '\\зг6':
-        statement.append(STATE)
-        STATE = '<h6'
-        outpStr += STATE
-        
-    elif token == '\\блок':
-        statement.append(STATE)
-        STATE = '<div'
-        outpStr += STATE
-        
-    elif token == '\\рис':
-        statement.append(STATE)
-        STATE = '<img'
-        outpStr += STATE
-        
-    elif token == '\\мсп':
-        statement.append(STATE)
-        STATE = '<ul'
-        outpStr += STATE
-        
-    elif token == '\\нсп':
-        statement.append(STATE)
-        STATE = '<ol'
-        outpStr += STATE
-        
-    elif token == '\\эл':
-        statement.append(STATE)
-        STATE = '<li'
-        outpStr += STATE
-        
-    elif token == '\\связка':
-        statement.append(STATE)
-        STATE = '<link'
-        outpStr += STATE  
-        
-    elif token == '\\адрес':
-        statement.append(STATE)
-        STATE = '<address'
-        outpStr += STATE
-        
-    elif token == '\\таблица':
-        statement.append(STATE)
-        STATE = '<table'
-        outpStr += STATE
-        
-    elif token == '\\стр':
-        statement.append(STATE)
-        STATE = '<tr'
-        outpStr += STATE
-        
-    elif token == '\\стлб':
-        statement.append(STATE)
-        STATE = '<td'
-        outpStr += STATE
-        
-#    elif token == '\\нc':
-#        statement.append(STATE)
-#        STATE = '<br'
-#        outpStr += STATE
+
             
     else:
         outpStr += token    
-        
+
 ###############################################################################        
     return STATE, outpStr, atrStr
 ##==============================================================================
@@ -380,7 +276,7 @@ if len(sys.argv) > 1:
         text = ''.join(lines)
         f.close()
         
-        # Создаем файл с тем же имененем и расширением .html
+        # Создаем файл с тем же имененем и расширением .log
         k = fileName.rfind('.')
         if k != -1:
             outFile = open(fileName[:k] + '.log', 'w')
@@ -410,13 +306,19 @@ NOT_FULL_TAGS = [
             # a
             '<a',
             '<address',
+            '<aside',
+            '<article',
+            '<abbr',
+            '<audio',
             
             # b
             '<body',
             '<b',
-#            '<br'
+            '<br',
             # c
-            
+            '<code',
+            '<cite',
+            '<canvas',
             
             # d
             '<div',
@@ -425,7 +327,8 @@ NOT_FULL_TAGS = [
             
             
             # f
-            
+            '<footer',
+            '<form',
             
             # g
             
@@ -437,10 +340,12 @@ NOT_FULL_TAGS = [
             '<h4',
             '<h5',
             '<h6',
+            '<header',
             
             # i
             '<i',
             '<img',
+            '<input',
             
             # j
             
@@ -453,16 +358,17 @@ NOT_FULL_TAGS = [
             '<link',
             
             # m            
-            
+            '<meta',
             
             # n
-            
+            '<nav',
             
             # o            
             '<ol',
             
             # p
             '<p',
+            '<pre',
             
             # q
             
@@ -475,18 +381,21 @@ NOT_FULL_TAGS = [
             '<sub',
             '<sup',
             '<style',
+            '<script',
+            '<section',
             
             # t
             '<table',
             '<td',
             '<tr',
+            '<title',
             
             # u
             '<u',
             '<ul',
             
             # v
-            
+            '<video',
             
             # w
             
@@ -501,15 +410,20 @@ FULL_TAGS = {
             # a
             '<a>' : '</a>',
             '<address>' : '</address>',
+            '<aside>' : '</aside>',
+            '<article>' : '</article>',
+            '<abbr>' : '</abbr>',
+            '<audio>' : '</audio>',
             
             # b
             '<body>' : '</body>', 
             '<b>' : '</b>',
-#            '<br>' : '',
+            '<br>' : '',
             
             # c 
-            
-            
+            '<code>' : '</code>',
+            '<cite>' : '</cite>',
+            '<canvas>' : '</canvas>',
             
             # d 
             '<div>' : '</div>',
@@ -518,7 +432,8 @@ FULL_TAGS = {
             
             
             # f
-            
+            '<footer>' : '</footer>',
+            '<form>' : '</form>',
             
             # g
             
@@ -531,10 +446,12 @@ FULL_TAGS = {
             '<h5>' : '</h5>',
             '<h6>' : '</h6>',
             '<head>' : '</head>',
+            '<header>' : '</header>',
             
             # i
             '<i>' : '</i>',
             '<img>' : '',
+            '<input>' : '',
             
             # j
             
@@ -547,16 +464,17 @@ FULL_TAGS = {
             '<link>' : '',
             
             # m
-            
+            '<meta>' : '',
             
             # n
-            
+            '<nav>' : '</nav>',
             
             # o
             '<ol>' : '</ol>',
             
             # p
             '<p>' : '</p>',
+            '<pre>' : '</pre>',
             
             # q
             
@@ -569,18 +487,21 @@ FULL_TAGS = {
             '<sub>' : '</sub>',
             '<sup>' : '</sup>',
             '<style>' : '</style>',
+            '<script>' : '</script>',
+            '<section>' : '</section>',
             
             # t
             '<table>' : '</table>',
             '<td>' : '</td>',
             '<tr>' : '</tr>',
+            '<title>' : '</title>',
             
             # u
             '<u>' : '</u>', 
             '<ul>' : '</ul>',
             
             # v
-            
+            '<video>' : '</video>',
             
             # w
             
@@ -590,8 +511,61 @@ FULL_TAGS = {
             
             ' ' : ' '
             }
-# Список одиночных тегов            
-SINGLE_TAGS = ['<br>', '<hr>']
+            
+HEAD_COMMAND = {
+                '\\стиль' : '<style',
+                '\\мета' : '<meta',
+                '\\титул' : '<title',
+                '\\скрипт' : '<script'
+                }
+                
+BODY_COMMAND = {
+                '\\абзац' : '<p',
+                '\\а' : '<p',
+                '\\ж' : '<b',
+                '\\к' : '<i',
+                '\\пдч' : '<u',
+                '\\зч' : '<s',
+                '\\с' : '<a',
+                '\\cсылка' : '<a',
+                '\\под' : '<sub',
+                '\\над' : '<sup',
+                '\\зг1' : '<h1',
+                '\\зг2' : '<h2',
+                '\\зг3' : '<h3',
+                '\\зг4' : '<h4',
+                '\\зг5' : '<h5',
+                '\\зг6' : '<h6',
+                '\\блок' : '<div',
+                '\\рис' : '<img',
+                '\\мсп' : '<ul',
+                '\\нсп' : '<ol',
+                '\\эл' : '<li',
+                '\\связка' : '<link',
+                '\\адрес' : '<address',
+                '\\таблица' : '<table',
+                '\\табл' : '<table',
+                '\\строка' : '<tr',
+                '\\стр' : '<tr',
+                '\\столбец' : '<td',
+                '\\стлб' : '<td',
+                '\\нс' : '<br',
+                '\\пре' : '<pre',
+                '\\код' : '<code',
+                '\\цитата' : '<cite',
+                '\\заголовок' : '<header',
+                '\\нав' : '<nav',
+                '\\секция' : '<section',
+                '\\ремарка' : '<aside',
+                '\\подвал' : '<footer',
+                '\\статья' : '<article',
+                '\\аббр' : '<abbr',
+                '\\форма' : '<form',
+                '\\ввод' : '<input',
+                '\\холст' : '<canvas',
+                '\\видео' : '<video',
+                '\\аудио' : '<audio'
+                }
 
 # Стек состояний
 statement = []
@@ -599,10 +573,16 @@ STATE = '<html>'
 
 inpStr = text
 outpStr = '<!DOCTYPE html>\n<html>\n'
-tokenList = parser(inpStr, log=False)
+k = fileName.rfind('/')
+if k != -1:
+    path = fileName[:k] + '/'
+else:
+    path = ''
+#    k = fileName.rfind('\\')
+#    path = fileName[:k] + '/'
+    
+tokenList = parser(inpStr, log=False, path=path)
 atrStr = ''
-
-#print(tokenList)
 
 for token in tokenList:
 
@@ -617,18 +597,13 @@ if STATE != 'END':
     print('Ошибка! Неожиданный конец файла.', file = outFile)
     exit()
 
-#print(outpStr)
-
-#if processSucessfull == False:
-#    print('Ошибка! Неожиданный конец файла.')
-    #exit()
     
 # Создаем файл с тем же имененем и расширением .html
 k = fileName.rfind('.')
 if k != -1:
-    fout = open(fileName[:k] + '.html', 'w')
+    fout = open(fileName[:k] + '.html', 'w', encoding='utf-8-sig')
 else:
-    fout = open(fileName + '.html', 'w')
+    fout = open(fileName + '.html', 'w', encoding='utf-8-sig')
 # Записываем в файл 
 fout.write(outpStr)
 fout.close()

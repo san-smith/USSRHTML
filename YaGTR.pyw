@@ -8,7 +8,7 @@ Created on Fri Sep 16 13:11:50 2016
 from PyQt5.QtCore import QFile, QRegExp, Qt
 from PyQt5.QtGui import QFont, QSyntaxHighlighter, QTextCharFormat
 from PyQt5.QtWidgets import (QApplication, QFileDialog, QMainWindow, QMenu,
-        QMessageBox, QTextEdit)
+        QMessageBox, QTextEdit, QFontDialog)
 import os
 
 
@@ -26,7 +26,7 @@ class MainWindow(QMainWindow):
         
         self.saved = False
         self.path = None
-        self.currentText = None
+        self.currentText = ""
 
     def about(self):
         QMessageBox.about(self, "О программе Редактор ЯГТР",
@@ -37,7 +37,16 @@ class MainWindow(QMainWindow):
                 "<a href=\"https://github.com/san-smith/USSRHTML\">GitHub</a></p>")
 
     def newFile(self):
-#        self.editor.clear()
+        """
+        Создание нового файла
+
+        Функция, вызываемая пунктом меню "Файл->Новый".
+        Метод сначала проверяет, не был ли изменен текст с момента последнего 
+        сохранения. Если текст не изменялся, то очищает область ввода и 
+        помечает текущее состояние как новый файл, т.е. считает, что путь
+        к файлу не указан и файл не сохранен. Если текст изменился, то 
+        предлагает сохранить текущий файл и создает новый.
+        """
         text = self.editor.toPlainText()
         if self.currentText != text:
             reply = QMessageBox.question(self, 'Новый файл', "Файл не сохранен. Сохранить?", 
@@ -125,19 +134,9 @@ class MainWindow(QMainWindow):
             self.setWindowTitle(self.title)
             self.currentText = self.editor.toPlainText()
         
-#    def question(self):
-#        reply = QMessageBox.question(self, 'Message', "Are you sure to quit?", 
-#                                     QMessageBox.Yes | QMessageBox.No | 
-#                                     QMessageBox.Cancel, QMessageBox.No)
-#        if reply == QMessageBox.Yes:
-#            self.saveFile()
-#        elif reply == QMessageBox.Cancel:
-#            return
-#        else:
-#            pass 
 
     def compileFile(self):
-        #os.system('python.exe ../../USSRHTML.py ./helloworld.ygtr')
+
         text = self.editor.toPlainText()
         if self.currentText != text:
             self.saved = False
@@ -145,15 +144,50 @@ class MainWindow(QMainWindow):
         if self.saved:
             os.system('python.exe ./USSRHTML.py ' + self.path)
             
+            k = self.path.rfind('.')            
             try:
-                k = self.path.rfind('.')
                 logFile = open(self.path[:k] + '.log', 'r')
-                text = logFile.readlines()
-                QMessageBox.about(self, "Компиляция", str(text))
+                lines = logFile.readlines()
+                text = ''
+                for line in lines:
+                    text += line + '\n'
+                QMessageBox.information(self, "Компиляция", str(text))
             except:
-                QMessageBox.about(self, "Компиляция", "Ошибка! Невозможно открыть лог.")
+                QMessageBox.critical(self, "Компиляция", "Ошибка! Невозможно "\
+                                    "открыть лог.")
         else:
-            QMessageBox.about(self, "Компиляция", "Файл не сохранен!")
+            QMessageBox.information(self, "Компиляция", "Файл не сохранен!")
+
+    def runFile(self):
+
+        text = self.editor.toPlainText()
+        if self.currentText != text:
+            self.saved = False
+            
+        if self.saved:
+            os.system('python.exe ./USSRHTML.py ' + self.path)
+            
+            k = self.path.rfind('.')            
+            try:
+                logFile = open(self.path[:k] + '.log', 'r')
+                lines = logFile.readlines()
+                text = ''
+                for line in lines:
+                    text += line + '\n'
+                QMessageBox.information(self, "Компиляция", str(text))
+            except:
+                QMessageBox.critical(self, "Компиляция", "Ошибка! Невозможно "\
+                                    "открыть лог.")
+            
+            fileHTML = self.path[:k] + '.html'
+            if os.access(fileHTML, os.F_OK):
+                os.system(self.path[:k] + '.html')
+            else:
+                QMessageBox.critical(self, "Компиляция", "Компиляция завершилась неудачей.")
+
+        else:
+            QMessageBox.information(self, "Компиляция", "Файл не сохранен!")
+
 
     def setupEditor(self):
         font = QFont()
@@ -165,6 +199,12 @@ class MainWindow(QMainWindow):
         self.editor.setFont(font)
 
         self.highlighter = Highlighter(self.editor.document())
+        
+    def setupFont(self):
+        font, ok = QFontDialog.getFont(QFont('Courier', 10))
+        if ok:
+            self.editor.setFont(font)
+
 
     def setupFileMenu(self):
         fileMenu = QMenu("Файл", self)
@@ -174,6 +214,9 @@ class MainWindow(QMainWindow):
         fileMenu.addAction("Открыть", self.openFile, "Ctrl+O")
         fileMenu.addAction("Сохранить", self.saveFile, "Ctrl+S")
         fileMenu.addAction("Сохранить как ...", self.saveFileAs)
+        fileMenu.addSeparator()
+        fileMenu.addAction("Настройки шрифта", self.setupFont)
+        fileMenu.addSeparator()
         fileMenu.addAction("Выход", QApplication.instance().quit, "Ctrl+Q")
 
     def setupRunMenu(self):
@@ -181,6 +224,7 @@ class MainWindow(QMainWindow):
         self.menuBar().addMenu(runMenu)
         
         runMenu.addAction("Компилировать", self.compileFile, "F5")
+        runMenu.addAction("Компилировать и запустить", self.runFile, "Ctrl+F5")
         
     def setupHelpMenu(self):
         helpMenu = QMenu("Помощь", self)
@@ -188,6 +232,20 @@ class MainWindow(QMainWindow):
 
         helpMenu.addAction("О программе", self.about)
         helpMenu.addAction("О &Qt", QApplication.instance().aboutQt)
+        
+    def closeEvent(self, e):
+        text = self.editor.toPlainText()
+        if self.currentText != text:
+            reply = QMessageBox.question(self, 'Завершение работы', "Файл не сохранен. Сохранить?", 
+                                         QMessageBox.Yes | QMessageBox.No | 
+                                         QMessageBox.Cancel, QMessageBox.Yes)
+            if reply == QMessageBox.Yes:
+                self.saveFile()
+            elif reply == QMessageBox.Cancel:
+                e.ignore()
+            else:
+                pass
+            
 
 
 class Highlighter(QSyntaxHighlighter):
@@ -205,8 +263,14 @@ class Highlighter(QSyntaxHighlighter):
                 "\\\\зг6\\b", "\\\\рис\\b", "\\\\эл\\b", "\\\\связка\\b",
                 "\\\\карта\\b", "\\\\нсп\\b", "\\\\мсп\\b",
                 "\\\\абзац\\b", "\\\\а\\b", "\\\\стиль\\b",
-                "\\\\под\\b", "\\\\над\\b", "\\\\таблица\\b", "\\\\стлб\\b",
-                "\\\\стр\\b", "\\\\стр\\b", "\\\\пдч\\b", "\\\\зч\\b"]
+                "\\\\под\\b", "\\\\над\\b", "\\\\таблица\\b", "\\\\табл\\b", 
+                "\\\\столбец\\b", "\\\\стлб\\b", "\\\\строка\\b", "\\\\стр\\b",
+                "\\\\пдч\\b", "\\\\зч\\b", "\\\\нс\\b", "\\\\пре\\b", 
+                "\\\\мета\\b", "\\\\скрипт\\b", "\\\\титул\\b", 
+                "\\\\цитата\\b", "\\\\заголовок\\b", "\\\\нав\\b", 
+                "\\\\секция\\b", "\\\\ремарка\\b", "\\\\подвал\\b",
+                "\\\\статья\\b", "\\\\аббр\\b", "\\\\форма\\b", "\\\\ввод\\b",
+                "\\\\холст\\b", "\\\\видео\\b", "\\\\аудио\\b"]
 
         self.highlightingRules = [(QRegExp(pattern), keywordFormat)
                 for pattern in keywordPatterns]
@@ -214,33 +278,35 @@ class Highlighter(QSyntaxHighlighter):
         commandFormat = QTextCharFormat()
         commandFormat.setFontWeight(QFont.Bold)
         commandFormat.setForeground(Qt.darkMagenta)
-        self.highlightingRules.append((QRegExp("\\\\"),
-                commandFormat))
-        self.highlightingRules.append((QRegExp("\\("),
-                commandFormat))
-        self.highlightingRules.append((QRegExp("\\)"),
+        commandPatterns = ['\\\\', '\\(', '\\)', '<', '>']
+        for pattern in commandPatterns:
+            self.highlightingRules.append((QRegExp(pattern),
                 commandFormat))
 
         singleLineCommentFormat = QTextCharFormat()
         singleLineCommentFormat.setForeground(Qt.red)
-        self.highlightingRules.append((QRegExp("%[^\n]*"),
+#        Если строка начинается с % или перед % не стоит \
+        self.highlightingRules.append((QRegExp("^%[^\n]*|[^\\\\]%[^\n]*"),
                 singleLineCommentFormat))
-
-        self.multiLineCommentFormat = QTextCharFormat()
-        self.multiLineCommentFormat.setForeground(Qt.red)
 
         quotationFormat = QTextCharFormat()
         quotationFormat.setForeground(Qt.darkGreen)
         self.highlightingRules.append((QRegExp("\".*\""), quotationFormat))
 
-        attributeFormat = QTextCharFormat()
-#        functionFormat.setFontItalic(True)
-        attributeFormat.setForeground(Qt.blue)
+        attributeBorderFormat = QTextCharFormat()
+        attributeBorderFormat.setForeground(Qt.blue)
         self.highlightingRules.append((QRegExp("::"),# #(QRegExp("((::)+[а-яА-Яa-zA-Z=/\"]+(::))"), #"\\b[A-Za-z0-9_]+(?=\\()"
-                attributeFormat))
+                attributeBorderFormat))
+        
+        attributeFormat = QTextCharFormat()
+        attributeFormat.setFontItalic(True)
+        attributeFormat.setForeground(Qt.blue)
+        attributePatterns = ["\\bstyle\\b", "\\bhref\\b", "\\bsrc\\b", 
+                             "\\bborder\\b", "\\bcellpadding\\b",
+                             "\\bcellspacing\\b"]
+        for pattern in attributePatterns:
+            self.highlightingRules.append((QRegExp(pattern), attributeFormat))
 
-        self.commentStartExpression = QRegExp("/\\*")
-        self.commentEndExpression = QRegExp("\\*/")
 
     def highlightBlock(self, text):
         for pattern, format in self.highlightingRules:
@@ -250,26 +316,6 @@ class Highlighter(QSyntaxHighlighter):
                 length = expression.matchedLength()
                 self.setFormat(index, length, format)
                 index = expression.indexIn(text, index + length)
-
-        self.setCurrentBlockState(0)
-
-        startIndex = 0
-        if self.previousBlockState() != 1:
-            startIndex = self.commentStartExpression.indexIn(text)
-
-        while startIndex >= 0:
-            endIndex = self.commentEndExpression.indexIn(text, startIndex)
-
-            if endIndex == -1:
-                self.setCurrentBlockState(1)
-                commentLength = len(text) - startIndex
-            else:
-                commentLength = endIndex - startIndex + self.commentEndExpression.matchedLength()
-
-            self.setFormat(startIndex, commentLength,
-                    self.multiLineCommentFormat)
-            startIndex = self.commentStartExpression.indexIn(text,
-                    startIndex + commentLength);
 
 
 if __name__ == '__main__':
