@@ -245,7 +245,7 @@ class MainWindow(QMainWindow):
                 e.ignore()
             else:
                 pass
-            
+                 
 
 
 class Highlighter(QSyntaxHighlighter):
